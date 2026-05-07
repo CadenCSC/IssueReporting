@@ -32,7 +32,7 @@ def get_issues():
     cursor = conn.cursor()
 
     cursor.execute('SELECT * FROM issues')
-    return cursor.fetchall()
+    rows = cursor.fetchall()
 
     conn.close()
     return rows
