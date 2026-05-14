@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import Listbox
+import customtkinter as ctk
+import CTkListbox
 from database import create_table, add_issue, get_issues
 
 create_table()
@@ -13,33 +13,62 @@ def submit():
     display_issues()
 
 def display_issues():
-    issue_list.delete(0, tk.END)
+    issue_list.delete("1.0", "end")
 
     issues = get_issues()
 
     for issue in issues:
-        issue_list.insert(tk.END, issue)
+        issue_list.insert("end", f"{issue}\n")
 
-root = tk.Tk()
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("blue")
+
+create_table()
+
+root = ctk.CTk()
 root.title("Issue Tracker")
-root.geometry("500x900")
+root.geometry("400x700")
 
-tk.Label(root, text="Issue Type").pack()
-type_entry = tk.Entry(root)
-type_entry.pack()
+header = ctk.CTkLabel(
+    root,
+    text="Issue Tracker",
+    font=ctk.CTkFont(size=24, weight="bold")
+)
 
-tk.Label(root, text="Description").pack()
-desc_entry = tk.Entry(root)
-desc_entry.pack()
+issues_label = ctk.CTkLabel(
+    root,
+    text="Active Issues",
+    font=("Arial", 18)
+)
+issues_label.pack()
 
-tk.Label(root, text="Location").pack()
-loc_entry = tk.Entry(root)
-loc_entry.pack()
 
-issue_list = Listbox(root, width=70)
-issue_list.pack(pady=20)
 
-btn = tk.Button(root, text="Submit", command=submit).pack(pady=10)
+issue_frame = ctk.CTkFrame(
+    root,
+    width=300,
+    height=400,
+    corner_radius=30
+    )
+issue_frame.pack(pady=20)
+
+issue_frame.pack_propagate(False)
+
+issue_list = ctk.CTkTextbox(
+    issue_frame,
+    width=260,
+    height=350
+)
+
+new_issue_button = ctk.CTkButton(
+    root,
+    text="NEW ISSUE",
+    width=250,
+    height=50,
+    corner_radius=20
+)
+new_issue_button.pack(pady=20)
+
 
 display_issues()
 root.mainloop()
