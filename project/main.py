@@ -1,24 +1,55 @@
 import customtkinter as ctk
-import CTkListbox
-from database import create_table, add_issue, get_issues
+from database import create_table, add_issue, get_issues, update_issue_status
+
+from CTkListbox import CTkListbox  
 
 create_table()
 
-def submit():
-    issue_type = type_entry.get()
-    description = desc_entry.get()
-    location = loc_entry.get()
+current_issues_data = []
 
-    add_issue(issue_type, description, location, "open")
-    display_issues()
+def submit():
+    issue_type = type_entry.get().strip()
+    description = desc_entry.get().strip()
+    location = loc_entry.get().strip()
+
+    if issue_type and description and location:
+        add_issue(issue_type, description, location, "open")
+        display_issues()
+
+        type_entry.delete(0, "end")
+        desc_entry.delete(0, "end")
+        loc_entry.delete(0, "end")
+
+        show_home()
 
 def display_issues():
-    issue_list.delete("1.0", "end")
+    global current_issues_data
 
-    issues = get_issues()
+    issue_list.delete("all")
 
-    for issue in issues:
-        issue_list.insert("end", f"{issue}\n")
+    current_issues_data = get_issues()
+
+    for issue in current_issues_data:
+        issue_id, issue_type, description, location, status = issue
+
+        icon = "🔴 [Open]" if status == "open" else "🟢 [Closed]"
+        display_text = f"{icon} {issue_type} | {location} ({description})"
+
+        issue_list.insert("end", display_text)
+
+def on_issue_click(selected_value):
+    selected_index = issue_list.curselection()
+
+    if selected_index is not None and current_issues_data:
+        clicked_issue = current_issues_data[selected_index]
+
+        issue_id = clicked_issue[0]
+        current_status = clicked_issue[4]
+
+        new_status = "closed" if current_status == "open" else "open"
+
+        update_issue_status(issue_id, new_status)
+        display_issues()
 
 def show_new_issue():
     home_frame.pack_forget()
@@ -47,28 +78,24 @@ new_issue_title = ctk.CTkLabel(
     text="Create New Issue",
     font=ctk.CTkFont(size=24, weight="bold")
 )
-
 new_issue_title.pack(pady=20)
 
 type_entry = ctk.CTkEntry(
     new_issue_frame,
     placeholder_text="Issue Type"
 )
-
 type_entry.pack(pady=10)
 
 desc_entry = ctk.CTkEntry(
     new_issue_frame,
     placeholder_text="Description"
 )
-
 desc_entry.pack(pady=10)
 
 loc_entry = ctk.CTkEntry(
     new_issue_frame,
     placeholder_text="Location"
 )
-
 loc_entry.pack(pady=10)
 
 submit_button = ctk.CTkButton(
@@ -80,7 +107,6 @@ submit_button = ctk.CTkButton(
     fg_color="green",
     command=submit
 )
-
 submit_button.pack(pady=20)
 
 back_button = ctk.CTkButton(
@@ -92,7 +118,6 @@ back_button = ctk.CTkButton(
     fg_color="gray",
     command=show_home
 )
-
 back_button.pack(pady=10)
 
 header = ctk.CTkLabel(
@@ -122,11 +147,13 @@ issue_frame.pack(pady=20)
 
 issue_frame.pack_propagate(False)
 
-issue_list = ctk.CTkTextbox(
+issue_list = CTkListbox(
     issue_frame,
     width=260,
-    height=350
+    height=350,
+    command=on_issue_click
 )
+issue_list.pack(pady=20)
 
 new_issue_button = ctk.CTkButton(
     home_frame,
@@ -135,7 +162,8 @@ new_issue_button = ctk.CTkButton(
     height=50,
     corner_radius=20,
     fg_color="red",
-    command=show_new_issue
+    command=show_new_issue,
+    font=("Segoe UI Emoji", 14)
 )
 new_issue_button.pack(pady=20)
 
