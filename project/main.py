@@ -6,6 +6,7 @@ from CTkListbox import CTkListbox
 create_table()
 
 current_issues_data = []
+selected_issue_id = None
 
 def submit():
     issue_type = type_entry.get().strip()
@@ -32,24 +33,28 @@ def display_issues():
     for issue in current_issues_data:
         issue_id, issue_type, description, location, status = issue
 
-        icon = "🔴 [Open]" if status == "open" else "🟢 [Closed]"
-        display_text = f"{icon} {issue_type} | {location} ({description})"
+        icon = "[Open]" if status == "open" else "[Closed]"
+        display_text = f"{icon} | {issue_type} | {location}"
 
         issue_list.insert("end", display_text)
 
 def on_issue_click(selected_value):
+    global selected_issue_id
     selected_index = issue_list.curselection()
 
     if selected_index is not None and current_issues_data:
         clicked_issue = current_issues_data[selected_index]
 
-        issue_id = clicked_issue[0]
-        current_status = clicked_issue[4]
+        issue_id, issue_type, description, location, status = clicked_issue
+        selected_issue_id = issue_id
 
-        new_status = "closed" if current_status == "open" else "open"
+        type_label.configure(text=f"Type: {issue_type}")
+        location_label.configure(text=f"Location: {location}")
+        status_label.configure(text=f"Status: {status}")
+        status_dropdown.set(status)
+        description_label.configure(text=f"Description:\n\n{description}")
 
-        update_issue_status(issue_id, new_status)
-        display_issues()
+        show_issue_details()
 
 def show_new_issue():
     home_frame.pack_forget()
@@ -57,9 +62,24 @@ def show_new_issue():
 
 def show_home():
     new_issue_frame.pack_forget()
+    issue_details_frame.pack_forget()
     home_frame.pack(fill="both", expand=True)
 
+def show_issue_details():
+    home_frame.pack_forget()
+    issue_details_frame.pack(fill="both", expand=True)
+
+def save_status():
+    update_issue_status(
+        selected_issue_id,
+        status_dropdown.get()
+    )
+
+    display_issues()
+    show_home()
+
 ctk.set_appearance_mode("dark")
+
 ctk.set_default_color_theme("blue")
 
 create_table()
@@ -72,6 +92,60 @@ home_frame = ctk.CTkFrame(root)
 home_frame.pack(fill="both", expand=True)
 
 new_issue_frame = ctk.CTkFrame(root)
+issue_details_frame = ctk.CTkFrame(root)
+
+details_title = ctk.CTkLabel(
+    issue_details_frame,
+    text="Issue Details",
+    font=ctk.CTkFont(size=24, weight="bold")
+)
+details_title.pack(pady=20)
+
+type_label = ctk.CTkLabel(
+    issue_details_frame,
+    text="Type: "
+)
+type_label.pack(pady=5)
+
+location_label = ctk.CTkLabel(
+    issue_details_frame,
+    text="Location: "
+)
+location_label.pack(pady=5)
+
+status_label = ctk.CTkLabel(
+    issue_details_frame,
+    text="Status: "
+)
+status_label.pack(pady=5)
+
+status_dropdown = ctk.CTkOptionMenu(
+    issue_details_frame,
+    values=["open", "closed"]
+)
+status_dropdown.pack(pady=10)
+
+save_button = ctk.CTkButton(
+    issue_details_frame,
+    text="Save",
+    command=save_status
+)
+save_button.pack(pady=10)
+
+description_label = ctk.CTkLabel(
+    issue_details_frame,
+    text="Description:",
+    wraplength=320,
+    justify="left"
+)
+description_label.pack(pady=10)
+
+back_details_button = ctk.CTkButton(
+    issue_details_frame,
+    text="Back",
+    command=show_home
+)
+back_details_button.pack(pady=20)
 
 new_issue_title = ctk.CTkLabel(
     new_issue_frame,
@@ -105,7 +179,8 @@ submit_button = ctk.CTkButton(
     height=40,
     corner_radius=20,
     fg_color="green",
-    command=submit
+    command=submit,
+    font=("Bahnschrift", 14, "bold")
 )
 submit_button.pack(pady=20)
 
@@ -116,7 +191,8 @@ back_button = ctk.CTkButton(
     height=30,
     corner_radius=15,
     fg_color="gray",
-    command=show_home
+    command=show_home,
+    font=("Bahnschrift", 14, "bold")
 )
 back_button.pack(pady=10)
 
@@ -125,17 +201,14 @@ header = ctk.CTkLabel(
     text="Issue Tracker",
     font=ctk.CTkFont(size=24, weight="bold")
 )
-
 header.pack(pady=20)
 
 issues_label = ctk.CTkLabel(
     home_frame,
     text="Active Issues",
-    font=("Arial", 18)
+    font=("Bahnschrift", 18)
 )
 issues_label.pack()
-
-
 
 issue_frame = ctk.CTkFrame(
     home_frame,
@@ -147,11 +220,19 @@ issue_frame.pack(pady=20)
 
 issue_frame.pack_propagate(False)
 
+header_label = ctk.CTkLabel(
+    issue_frame,
+    text="Status | Type | Location",
+    font=("Bahnschrift", 20, "bold")
+)
+header_label.pack(pady=(10, 0))
+
 issue_list = CTkListbox(
     issue_frame,
     width=260,
     height=350,
-    command=on_issue_click
+    command=on_issue_click,
+    font=("Bahnschrift", 14, "bold")
 )
 issue_list.pack(pady=20)
 
@@ -163,10 +244,9 @@ new_issue_button = ctk.CTkButton(
     corner_radius=20,
     fg_color="red",
     command=show_new_issue,
-    font=("Segoe UI Emoji", 14)
+    font=("Bahnschrift", 14, "bold")
 )
 new_issue_button.pack(pady=20)
-
 
 display_issues()
 root.mainloop()

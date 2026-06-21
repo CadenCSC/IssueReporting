@@ -1,3 +1,6 @@
+Written By ChatGPT to help me streamline how im going to build my project
+
+
 🧩 1. Recommended Tech Stack (Desktop)
 ✅ Best choice:
     Python + Tkinter (built-in, simple)
