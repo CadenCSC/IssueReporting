@@ -1,9 +1,6 @@
 import customtkinter as ctk
-from database import create_table, add_issue, get_issues, update_issue_status
-
-from CTkListbox import CTkListbox  
-
-create_table()
+from database import (create_table, add_issue, get_issues, update_issue_status, delete_issue)
+from CTkListbox import CTkListbox
 
 current_issues_data = []
 selected_issue_id = None
@@ -50,9 +47,9 @@ def on_issue_click(selected_value):
 
         type_label.configure(text=f"Type: {issue_type}")
         location_label.configure(text=f"Location: {location}")
-        status_label.configure(text=f"Status: {status}")
-        status_dropdown.set(status)
         description_label.configure(text=f"Description:\n\n{description}")
+        status_dropdown.set(status.upper())
+        status_label.configure(text=f"Status: {status.upper()}")
 
         show_issue_details()
 
@@ -68,15 +65,6 @@ def show_home():
 def show_issue_details():
     home_frame.pack_forget()
     issue_details_frame.pack(fill="both", expand=True)
-
-def save_status():
-    update_issue_status(
-        selected_issue_id,
-        status_dropdown.get()
-    )
-
-    display_issues()
-    show_home()
 
 ctk.set_appearance_mode("dark")
 
@@ -97,78 +85,110 @@ issue_details_frame = ctk.CTkFrame(root)
 details_title = ctk.CTkLabel(
     issue_details_frame,
     text="Issue Details",
-    font=ctk.CTkFont(size=24, weight="bold")
+    font=("Bahnschrift", 24, "bold")
 )
 details_title.pack(pady=20)
 
 type_label = ctk.CTkLabel(
     issue_details_frame,
-    text="Type: "
+    text="Type: ",
+    justify="center",
+    font=("Bahnschrift", 14)
 )
 type_label.pack(pady=5)
 
 location_label = ctk.CTkLabel(
     issue_details_frame,
-    text="Location: "
+    text="Location: ",
+    justify="center",
+    font=("Bahnschrift", 14)
 )
 location_label.pack(pady=5)
 
+description_label = ctk.CTkLabel(
+    issue_details_frame,
+    text="Description: ",
+    wraplength=320,
+    justify="center",
+    font=("Bahnschrift", 14)
+)
+description_label.pack(pady=10)
+
 status_label = ctk.CTkLabel(
     issue_details_frame,
-    text="Status: "
+    text="Status: ",
+    font=("Bahnschrift", 14)
 )
 status_label.pack(pady=5)
 
+def status_changed(value):
+    global selected_issue_id
+
+    update_issue_status(selected_issue_id, value.lower())
+
+    status_label.configure(text=f"Status: {value}")
+
+    display_issues()
+    
 status_dropdown = ctk.CTkOptionMenu(
     issue_details_frame,
-    values=["open", "closed"]
+    values=["OPEN", "CLOSED"],
+    command=status_changed,
+    font=("Bahnschrift", 14)
 )
 status_dropdown.pack(pady=10)
-
-save_button = ctk.CTkButton(
-    issue_details_frame,
-    text="Save",
-    command=save_status
-)
-save_button.pack(pady=10)
-
-description_label = ctk.CTkLabel(
-    issue_details_frame,
-    text="Description:",
-    wraplength=320,
-    justify="left"
-)
-description_label.pack(pady=10)
 
 back_details_button = ctk.CTkButton(
     issue_details_frame,
     text="Back",
-    command=show_home
+    command=show_home,
+    font=("Bahnschrift", 14, "bold")
 )
 back_details_button.pack(pady=20)
+
+def remove_current_issue():
+    global selected_issue_id
+
+    delete_issue(selected_issue_id)
+
+    display_issues()
+    show_home()
+
+delete_button = ctk.CTkButton(
+    issue_details_frame,
+    text="Delete Issue",
+    fg_color="red",
+    hover_color="darkred",
+    command=remove_current_issue,
+    font=("Bahnschrift", 14, "bold")
+)
+delete_button.pack(pady=10)
 
 new_issue_title = ctk.CTkLabel(
     new_issue_frame,
     text="Create New Issue",
-    font=ctk.CTkFont(size=24, weight="bold")
+    font=("Bahnschrift", 24, "bold")
 )
 new_issue_title.pack(pady=20)
 
 type_entry = ctk.CTkEntry(
     new_issue_frame,
-    placeholder_text="Issue Type"
+    placeholder_text="Issue Type",
+    font=("Bahnschrift", 14)
 )
 type_entry.pack(pady=10)
 
 desc_entry = ctk.CTkEntry(
     new_issue_frame,
-    placeholder_text="Description"
+    placeholder_text="Description",
+    font=("Bahnschrift", 14)
 )
 desc_entry.pack(pady=10)
 
 loc_entry = ctk.CTkEntry(
     new_issue_frame,
-    placeholder_text="Location"
+    placeholder_text="Location",
+    font=("Bahnschrift", 14)
 )
 loc_entry.pack(pady=10)
 
@@ -199,7 +219,7 @@ back_button.pack(pady=10)
 header = ctk.CTkLabel(
     home_frame,
     text="Issue Tracker",
-    font=ctk.CTkFont(size=24, weight="bold")
+    font=("Bahnschrift", 24, "bold")
 )
 header.pack(pady=20)
 
