@@ -90,4 +90,15 @@ def update_issue_status(issue_id, new_status):
     conn.commit()  # save changes
     conn.close()  # close connection
 
+def delete_issue(issue_id):
+    conn = connect()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM issues WHERE id = ?",
+        (issue_id,)
+    )
+
+    conn.commit()
+    conn.close()
 

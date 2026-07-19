@@ -5,8 +5,6 @@ reports. It uses CustomTkinter for the interface and an SQLite
 database for persistence.
 """
 
-from typing import List, Optional, Tuple
-
 from typing import List, Optional, Tuple  # typing helpers
 
 import customtkinter as ctk  # customtkinter UI toolkit
@@ -17,6 +15,7 @@ from database import (  # database helper functions
     add_issue,  # insert new issue
     get_issues,  # fetch issues
     update_issue_status,  # update issue status
+    delete_issue,  # delete an issue
 )
 
 from CTkListbox import CTkListbox  # custom listbox widget
@@ -158,12 +157,16 @@ def on_issue_click(selected_value):
 
         type_label.configure(text=f"Type: {issue_type}")
         location_label.configure(text=f"Location: {location}")
-        status_label.configure(text=f"Status: {status}")
-        status_dropdown.set(status)
         description_label.configure(text=f"Description:\n\n{description}")
+        status_dropdown.set(status)  # set dropdown to actual status
+        status_label.configure(text=f"Status: {status}")
 
-        # Ensure the Save button is enabled now that an issue is selected
+        # Ensure the Save and Delete buttons are enabled now that an issue is selected
         save_button.configure(state="normal")  # enable Save button
+        try:
+            delete_button.configure(state="normal")  # enable Delete button
+        except NameError:
+            pass
 
         # Highlight selection in the listbox for better visibility
         try:
@@ -194,6 +197,10 @@ def show_home():
     except Exception:
         pass
     save_button.configure(state="disabled")
+    try:
+        delete_button.configure(state="disabled")
+    except NameError:
+        pass
 
 
 def show_issue_details():
@@ -232,11 +239,40 @@ def save_status():
     show_home()
 
 
+def remove_current_issue():
+    """Delete the currently selected issue after confirmation."""
+    global selected_issue_id
+
+    if selected_issue_id is None:
+        messagebox.showwarning("No Selection", "No issue selected to delete.")
+        delete_button.configure(state="disabled")
+        return
+
+    confirm = messagebox.askyesno(
+        "Confirm Delete", "Are you sure you want to delete this issue?"
+    )
+    if not confirm:
+        return
+
+    try:
+        delete_issue(selected_issue_id)
+    except sqlite3.Error as exc:
+        messagebox.showerror("Database Error", f"Failed to delete issue: {exc}")
+        return
+
+    try:
+        display_issues()
+    except sqlite3.Error:
+        pass
+
+    messagebox.showinfo("Deleted", "Issue deleted.")
+    show_home()
+
+
 ctk.set_appearance_mode("dark")
 
 ctk.set_default_color_theme("blue")
 
-create_table()
 
 root = ctk.CTk()
 root.title("Issue Tracker")
@@ -264,79 +300,96 @@ issue_details_frame = ctk.CTkFrame(root)
 details_title = ctk.CTkLabel(
     issue_details_frame,
     text="Issue Details",
-    font=ctk.CTkFont(size=24, weight="bold")
+    font=("Bahnschrift", 24, "bold")
 )
 details_title.pack(pady=20)
 
+# Type label (single definition)
 type_label = ctk.CTkLabel(
     issue_details_frame,
-    text="Type: "
+    text="Type: ",
 )
 type_label.pack(pady=5)
 
 location_label = ctk.CTkLabel(
     issue_details_frame,
-    text="Location: "
+    text="Location: ",
 )
 location_label.pack(pady=5)
 
 status_label = ctk.CTkLabel(
     issue_details_frame,
-    text="Status: "
+    text="Status: ",
 )
 status_label.pack(pady=5)
 
+# Single status dropdown (values are lower-case to match DB values)
 status_dropdown = ctk.CTkOptionMenu(
     issue_details_frame,
-    values=["open", "closed"]
+    values=["open", "closed"],
 )
 status_dropdown.pack(pady=10)
-
 save_button = ctk.CTkButton(
     issue_details_frame,
     text="Save",
-    command=save_status
+    command=save_status,
 )
 save_button.pack(pady=10)
 save_button.configure(state="disabled")
 
+# Description area for the issue details (single definition)
 description_label = ctk.CTkLabel(
     issue_details_frame,
     text="Description:",
     wraplength=320,
-    justify="left"
+    justify="left",
 )
 description_label.pack(pady=10)
 
 back_details_button = ctk.CTkButton(
     issue_details_frame,
     text="Back",
-    command=show_home
+    command=show_home,
+    font=("Bahnschrift", 14, "bold")
 )
 back_details_button.pack(pady=20)
+
+delete_button = ctk.CTkButton(
+    issue_details_frame,
+    text="Delete Issue",
+    fg_color="red",
+    hover_color="darkred",
+    command=remove_current_issue,
+    font=("Bahnschrift", 14, "bold")
+)
+delete_button.pack(pady=10)
+delete_button.configure(state="disabled")
 
 new_issue_title = ctk.CTkLabel(
     new_issue_frame,
     text="Create New Issue",
-    font=ctk.CTkFont(size=24, weight="bold")
+    font=("Bahnschrift", 24, "bold")
 )
 new_issue_title.pack(pady=20)
 
 type_entry = ctk.CTkEntry(
     new_issue_frame,
-    placeholder_text="Issue Type"
+    placeholder_text="Issue Type",
+    font=("Bahnschrift", 14)
 )
 type_entry.pack(pady=10)
 
 desc_entry = ctk.CTkEntry(
     new_issue_frame,
-    placeholder_text="Description"
+    placeholder_text="Description",
+    font=("Bahnschrift", 14)
 )
 desc_entry.pack(pady=10)
 
 loc_entry = ctk.CTkEntry(
     new_issue_frame,
-    placeholder_text="Location"
+    placeholder_text="Location",
+    font=("Bahnschrift", 14)
 )
 loc_entry.pack(pady=10)
 
@@ -367,7 +420,7 @@ back_button.pack(pady=10)
 header = ctk.CTkLabel(
     home_frame,
     text="Issue Tracker",
-    font=ctk.CTkFont(size=24, weight="bold")
+    font=("Bahnschrift", 24, "bold")
 )
 header.pack(pady=20)
 
